@@ -10,15 +10,15 @@
 // ---- START VEXCODE CONFIGURED DEVICES ----
 // Robot Configuration:
 // [Name]               [Type]        [Port(s)]
-// Vision               vision        16              
-// LeftMotor            motor         11              
-// RightIntake          motor         13              
-// SlapMotor            motor         14              
-// LeftIntake           motor         17              
-// BackUp               motor         18              
-// FrontUp              motor         19              
-// RightMotor           motor         20              
+// LeftMotor            motor         19              
+// RightIntake          motor         8               
+// LeftSlapMotor        motor         12              
+// LeftIntake           motor         20              
+// BackUp               motor         11              
+// FrontUp              motor         1               
+// RightMotor           motor         18              
 // Controller1          controller                    
+// RightSlapMotor       motor         13              
 // ---- END VEXCODE CONFIGURED DEVICES ----
 
 #include "vex.h"
@@ -28,37 +28,44 @@ using namespace vex;
 bool SLAPL = false;
 bool SLAPR = false;
 
+int TurningSpeed = 8;
+int MovingSpeed = 2;
+
+void Boost() {
+  TurningSpeed = 6;
+  MovingSpeed = 1;
+}
+
+void Unboost() {
+  TurningSpeed = 8;
+  MovingSpeed = 2;
+}
+
 void IntakeIn(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   LeftIntake.spin(forward);
   RightIntake.spin(forward);  
 };
 
 void IntakeIn() {
-  if (MYTURN) return;
   IntakeIn(false);
 }
 
 void IntakeOut(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   LeftIntake.spin(reverse);
   RightIntake.spin(reverse);
 }
 
 void IntakeOut() {
-  if (MYTURN) return;
   IntakeOut(false);
 }
 
 void IntakeStop(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   if (!Man && (Controller1.ButtonL1.pressing() || Controller1.ButtonL2.pressing())) return;
   LeftIntake.stop(vex::brakeType::brake);
   RightIntake.stop(vex::brakeType::brake);
 }
 
 void IntakeStop() {
-  if (MYTURN) return;
   IntakeStop(false);
 }
 
@@ -79,7 +86,6 @@ int GearsStatus() {
 }
 
 void GearsUp(bool Man, double time=0) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   if (time > 0) {
     FrontUp.spinFor(forward, time, seconds);
     BackUp.spinFor(forward, time, seconds);
@@ -90,12 +96,10 @@ void GearsUp(bool Man, double time=0) {
 };
 
 void GearsUp() {
-  if (MYTURN) return;
   GearsUp(false);
 }
 
 void GearsDown(bool Man, int time=0) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   if (time > 0) {
     FrontUp.spinFor(forward, time, seconds);
     BackUp.spinFor(forward, time, seconds);
@@ -106,87 +110,67 @@ void GearsDown(bool Man, int time=0) {
 }
 
 void GearsDown() {
-  if (MYTURN) return;
   GearsDown(false);
 }
 
 void GearsStop(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   if (!Man && (Controller1.ButtonR1.pressing() || Controller1.ButtonR2.pressing())) return;
   FrontUp.stop(vex::brakeType::brake);
   BackUp.stop(vex::brakeType::brake);
 }
 
 void GearsStop() {
-  if (MYTURN) return;
   GearsStop(false);
 }
 
 void SlapL() {
-  if (!SLAPR) {
+  if (!SLAPR && !SLAPL) {
     SLAPL = true;
     LeftSlapMotor.setVelocity(65,percent);
     LeftSlapMotor.setMaxTorque(50, percent);
-    LeftSlapMotor.spinToPosition(SlapMotor.position(deg)+360, deg);
-    while (!LeftSlapMotor.isDone()) {}
-    LeftSlapMotor.setPosition(SlapMotor.position(deg)-360, deg);
+    LeftSlapMotor.spinToPosition(LeftSlapMotor.position(deg)+300, deg, true);
+    LeftSlapMotor.setPosition(LeftSlapMotor.position(deg)-300, deg);
     LeftSlapMotor.stop(coast);
     SLAPL = false;
   }
+  return;
 }
 
 void SlapR() {
-  if (!SLAPL) {
+  if (!SLAPL && !SLAPR) {
     SLAPR = true;
     RightSlapMotor.setVelocity(65, percent);
-    RightSlapMotor.spinToPosition(SlapMotor.position(deg)+360, deg);
-    while (!RightSlapMotor.isDone()) {};
-    RightSlapMotor.setPosition(SlapMotor.position(deg)-360, deg);
+    RightSlapMotor.spinToPosition(RightSlapMotor.position(deg)+300, deg, true);
+    RightSlapMotor.setPosition(RightSlapMotor.position(deg)-300, deg);
     RightSlapMotor.stop(coast);
     SLAPR = false;
   }
+  return;
 }
     
 
 void A2Changed() {
-  if (MYTURN) return;
-  if (competition().isDriverControl() && competition().isEnabled()) {
-    float a2 = Controller1.Axis2.position(percent);
-    float a3 = Controller1.Axis3.position(percent);
-    if (a3 < 0 && a2 > 0) {
-      RightMotor.setVelocity(a2/8, percent);
-    } else {
-      RightMotor.setVelocity(a2/2, percent);
-    }
-    RightMotor.spin(forward);
-    if (a2 < 5 && a2 > -5) RightMotor.stop(brake);
-  }
+  float a2 = Controller1.Axis2.position(percent);
+  RightMotor.setVelocity(a2/MovingSpeed, percent);
+  RightMotor.spin(forward);
+  if (a2 < 5 && a2 > -5) RightMotor.stop(brake);
 }
 
 void A3Changed() {
-  if (MYTURN) return;
-  if (competition().isDriverControl() && competition().isEnabled()) {
-    float a3 = Controller1.Axis3.position(percent);
-    float a2 = Controller1.Axis2.position(percent);
-    if (a3 > 0 && a2 < 0) {
-      LeftMotor.setVelocity(a3/8, percent);
-    } else {
-      LeftMotor.setVelocity(a3/2, percent);
-    }
-    LeftMotor.spin(forward);
-    if (a3 < 5 && a3 > -5) LeftMotor.stop(brake);
-  }
+  float a3 = Controller1.Axis3.position(percent);
+  LeftMotor.setVelocity(a3/MovingSpeed, percent);
+  LeftMotor.spin(forward);
+  if (a3 < 5 && a3 > -5) LeftMotor.stop(brake);
 }
 
 void LeftSlapLeft(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   LeftSlapMotor.setVelocity(30, percent);
   LeftSlapMotor.spin(reverse);
 }
 
 void LeftSlapLeft() { LeftSlapLeft(false); }
 
-void SlapRight(bool Man) {
+void LeftSlapRight(bool Man) {
   LeftSlapMotor.setVelocity(30, percent);
   LeftSlapMotor.spin(forward);
 }
@@ -196,15 +180,26 @@ void LeftSlapRight() {
 }
 
 void LeftSlapStop(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
   LeftSlapMotor.stop(hold);
 }
 
 void LeftSlapStop() { LeftSlapStop(false); }
 
+void RightSlapRight() {
+  RightSlapMotor.setVelocity(30, percent);
+  RightSlapMotor.spin(forward);
+}
+
+void RightSlapLeft() {
+  RightSlapMotor.setVelocity(30, percent);
+  RightSlapMotor.spin(reverse);
+}
+
+void RightSlapStop() {
+  RightSlapMotor.stop(hold);
+}
+
 void SlowInUp(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
-  if (MYTURN) return;
   FrontUp.setVelocity(30, percent);
   BackUp.setVelocity(30, percent);
   FrontUp.spin(forward);
@@ -214,8 +209,6 @@ void SlowInUp(bool Man) {
 void SlowInUp() { SlowInUp(false); }
 
 void SlowInDown(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
-  if (MYTURN) return;
   FrontUp.setVelocity(30, percent);
   BackUp.setVelocity(30, percent);
   FrontUp.spin(reverse);
@@ -225,8 +218,6 @@ void SlowInDown(bool Man) {
 void SlowInDown() { SlowInDown(false); }
 
 void SlowInStop(bool Man) {
-  if (!Man && (!competition().isEnabled() || !competition().isDriverControl())) return;
-  if (MYTURN) return;
   if (!Man && (Controller1.ButtonUp.pressing() || Controller1.ButtonDown.pressing())) return;
   FrontUp.setVelocity(50, percent);
   BackUp.setVelocity(50, percent);
@@ -237,7 +228,6 @@ void SlowInStop(bool Man) {
 void SlowInStop() { SlowInStop(false); }
 
 void MLeftSlap() {
-  if ((!competition().isEnabled() || !competition().isDriverControl())) return;
   Controller1.rumble(".");
   SlapL();
 }
@@ -276,16 +266,99 @@ void TurnLeft() {
 }
 
 void autonomous() {
-  SlapRight();
+  FrontUp.setVelocity(75, pct);
+  BackUp.setVelocity(75, pct);
+
+
+  RightMotor.spinFor(-0.25, rev, false);
+  LeftMotor.spinFor(0.25, rev, true);
+
+  SlapR();
+
+  RightMotor.spinFor(0.3, rev, false);
+  LeftMotor.spinFor(0.3, rev, true);
+
+  RightMotor.spinFor(-0.85, rev, false);
+  LeftMotor.spinFor(0.85, rev, true);
+
+  RightIntake.setVelocity(75, pct);
+  LeftIntake.setVelocity(75, pct);
+  RightIntake.spin(forward);
+  LeftIntake.spin(forward);
+
+  FrontUp.spinFor(1.5, rev, false);
+  BackUp.spinFor(1.5, rev, false);
+  
+  RightMotor.spinFor(1.15, rev, false);
+  LeftMotor.spinFor(1.15, rev);
+
+  RightIntake.stop(coast);
+  LeftIntake.stop(coast);
+
+  RightMotor.stop(brake);
+  LeftMotor.stop(brake);
+
+  RightMotor.spinFor(-2.25, rev, false);
+  LeftMotor.spinFor(-2.25, rev);
+
+  RightMotor.spinFor(1.25, rev, false);
+  LeftMotor.spinFor(-1.25, rev);
+
+  RightMotor.spinFor(-0.75, rev, false);
+  LeftMotor.spinFor(-0.75, rev, true);
+  
+  FrontUp.spin(forward);
+  BackUp.spin(forward);
+  RightIntake.spin(forward);
+  LeftIntake.spin(forward);
+  wait(1, sec);
+  SlapL();
+  wait(0.75, sec);
+  FrontUp.stop(coast);
+  BackUp.stop(coast);
+  RightIntake.stop(coast);
+  LeftIntake.stop(coast);
 }
 
 void Reset() {
-  int s = Brain.timer(msec)+2500;
+  int s = Brain.timer(msec)+1500;
   while (Brain.timer(msec) < s && Controller1.ButtonX.pressing());
   if (Brain.timer(msec) < s) return;
   SLAPL = false;
   SLAPR = false;
+  LeftSlapMotor.stop(coast);
+  RightSlapMotor.stop(coast);
   Controller1.rumble("..");
+}
+
+void drivercontrol() {
+  Controller1.ButtonL1.pressed(IntakeIn);
+  Controller1.ButtonL2.pressed(IntakeOut);
+  Controller1.ButtonR1.pressed(GearsUp);
+  Controller1.ButtonR2.pressed(GearsDown);
+  Controller1.ButtonA.pressed(MRightSlap);
+  Controller1.ButtonY.pressed(MLeftSlap);
+  Controller1.ButtonB.pressed(Boost);
+  Controller1.ButtonB.released(Unboost);
+  Controller1.ButtonX.pressed(Reset);
+  Controller1.ButtonRight.pressed(LeftSlapRight);
+  Controller1.ButtonLeft.pressed(LeftSlapLeft);
+  Controller1.ButtonUp.pressed(SlowInUp);
+  Controller1.ButtonDown.pressed(SlowInDown);
+
+  Controller1.ButtonUp.released(SlowInStop);
+  Controller1.ButtonDown.released(SlowInStop);
+  Controller1.ButtonRight.released(LeftSlapStop);
+  Controller1.ButtonLeft.released(LeftSlapStop);
+  Controller1.ButtonL1.released(IntakeStop);
+  Controller1.ButtonL2.released(IntakeStop);
+  Controller1.ButtonR1.released(GearsStop);
+  Controller1.ButtonR2.released(GearsStop);
+
+  Controller1.Axis2.changed(A2Changed);
+  Controller1.Axis3.changed(A3Changed);
+  FrontUp.setVelocity(75, percent);
+  BackUp.setVelocity(75, percent);
 }
 
 int main() {
@@ -296,35 +369,25 @@ int main() {
   LeftSlapMotor.setPosition(0,degrees);
 
   competition().autonomous(autonomous);
+  competition().drivercontrol(drivercontrol);
   
-  Controller1.ButtonL1.pressed(IntakeIn);
-  Controller1.ButtonL2.pressed(IntakeOut);
-  Controller1.ButtonR1.pressed(GearsUp);
-  Controller1.ButtonR2.pressed(GearsDown);
-  Controller1.ButtonA.pressed(MRightSlap);
-  Controller1.ButtonY.pressed(MLeftSlap);
-  Controller1.ButtonX.pressed(Reset);
-  Controller1.ButtonRight.pressed(LeftSlapRight);
-  Controller1.ButtonLeft.pressed(LeftSlapLeft);
-  Controller1.ButtonUp.pressed(SlowInUp);
-  Controller1.ButtonDown.pressed(SlowInDown);
-
-  Controller1.ButtonUp.released(SlowInStop);
-  Controller1.ButtonDown.released(SlowInStop);
-  Controller1.ButtonRight.released(SlapStop);
-  Controller1.ButtonLeft.released(SlapStop);
-  Controller1.ButtonL1.released(IntakeStop);
-  Controller1.ButtonL2.released(IntakeStop);
-  Controller1.ButtonR1.released(GearsStop);
-  Controller1.ButtonR2.released(GearsStop);
-
-  Controller1.Axis2.changed(A2Changed);
-  Controller1.Axis3.changed(A3Changed);
-  FrontUp.setVelocity(75, percent);
-  BackUp.setVelocity(75, percent);
   while (true) {
     Brain.Screen.newLine();
-    Brain.Screen.print(Brain.timer(msec));
+    Brain.Screen.print(RightMotor.temperature());
+    Brain.Screen.print(" : ");
+    Brain.Screen.print(LeftMotor.temperature());
+    Brain.Screen.print(" : ");
+    Brain.Screen.print(Brain.Timer.time());
+    if (RightMotor.temperature() > 79) {
+      Controller1.Screen.clearLine(1);
+      Controller1.Screen.setCursor(1, 1);
+      Controller1.Screen.print("r-drive too hot");
+    }
+    if (LeftMotor.temperature() > 79) {
+      Controller1.Screen.clearLine(2);
+      Controller1.Screen.setCursor(2, 1);
+      Controller1.Screen.print("l-drive too hot");
+    }
     /*
     Controller1.Screen.clearLine(1);
     Controller1.Screen.setCursor(1, 1);
@@ -342,4 +405,8 @@ int main() {
     }
     */
   }
+  Controller1.rumble("--..--");
+  Brain.Screen.newLine();
+  Brain.Screen.print("MAIN LOOP ENDED");
+  Controller1.Screen.print("MAIN LOOP ENDED");
 }
