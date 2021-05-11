@@ -31,16 +31,6 @@ bool SLAPR = false;
 int TurningSpeed = 8;
 int MovingSpeed = 2;
 
-void Boost() {
-  TurningSpeed = 6;
-  MovingSpeed = 1;
-}
-
-void Unboost() {
-  TurningSpeed = 8;
-  MovingSpeed = 2;
-}
-
 void IntakeIn(bool Man) {
   LeftIntake.spin(forward);
   RightIntake.spin(forward);  
@@ -163,6 +153,20 @@ void A3Changed() {
   if (a3 < 5 && a3 > -5) LeftMotor.stop(brake);
 }
 
+void Boost() {
+  TurningSpeed = 6;
+  MovingSpeed = 1;
+  A3Changed();
+  A2Changed();
+}
+
+void Unboost() {
+  TurningSpeed = 8;
+  MovingSpeed = 2;
+  A3Changed();
+  A2Changed();
+}
+
 void LeftSlapLeft(bool Man) {
   LeftSlapMotor.setVelocity(30, percent);
   LeftSlapMotor.spin(reverse);
@@ -269,14 +273,16 @@ void autonomous() {
   FrontUp.setVelocity(75, pct);
   BackUp.setVelocity(75, pct);
 
-
+  /*
   RightMotor.spinFor(-0.25, rev, false);
   LeftMotor.spinFor(0.25, rev, true);
+  */
+  LeftMotor.spinFor(0.15, rev, true);
 
   SlapR();
 
-  RightMotor.spinFor(0.3, rev, false);
-  LeftMotor.spinFor(0.3, rev, true);
+  RightMotor.spinFor(0.4, rev, false);
+  LeftMotor.spinFor(0.4, rev, true);
 
   RightMotor.spinFor(-0.85, rev, false);
   LeftMotor.spinFor(0.85, rev, true);
@@ -289,8 +295,8 @@ void autonomous() {
   FrontUp.spinFor(1.5, rev, false);
   BackUp.spinFor(1.5, rev, false);
   
-  RightMotor.spinFor(1.15, rev, false);
-  LeftMotor.spinFor(1.15, rev);
+  RightMotor.spinFor(1.95, rev, false);
+  LeftMotor.spinFor(1.95, rev);
 
   RightIntake.stop(coast);
   LeftIntake.stop(coast);
@@ -298,8 +304,8 @@ void autonomous() {
   RightMotor.stop(brake);
   LeftMotor.stop(brake);
 
-  RightMotor.spinFor(-2.25, rev, false);
-  LeftMotor.spinFor(-2.25, rev);
+  RightMotor.spinFor(-3.05, rev, false);
+  LeftMotor.spinFor(-3.05, rev);
 
   RightMotor.spinFor(1.25, rev, false);
   LeftMotor.spinFor(-1.25, rev);
@@ -378,15 +384,25 @@ int main() {
     Brain.Screen.print(LeftMotor.temperature());
     Brain.Screen.print(" : ");
     Brain.Screen.print(Brain.Timer.time());
-    if (RightMotor.temperature() > 79) {
+    if (RightMotor.temperature() > 60) {
       Controller1.Screen.clearLine(1);
       Controller1.Screen.setCursor(1, 1);
-      Controller1.Screen.print("r-drive too hot");
+      Controller1.Screen.print("Heat Warn : R-Motor");
     }
-    if (LeftMotor.temperature() > 79) {
+    if (RightMotor.temperature() > 70) {
+      Controller1.Screen.clearLine(1);
+      Controller1.Screen.setCursor(1, 1);
+      Controller1.Screen.print("Heat Fail : R-Motor");
+    }
+    if (LeftMotor.temperature() > 60) {
       Controller1.Screen.clearLine(2);
       Controller1.Screen.setCursor(2, 1);
-      Controller1.Screen.print("l-drive too hot");
+      Controller1.Screen.print("Heart Warn : L-Motor");
+    }
+    if (LeftMotor.temperature() > 70) {
+      Controller1.Screen.clearLine(2);
+      Controller1.Screen.setCursor(2, 1);
+      Controller1.Screen.print("Heart Fail : L-Motor");
     }
     /*
     Controller1.Screen.clearLine(1);
