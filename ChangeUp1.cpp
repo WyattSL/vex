@@ -116,7 +116,7 @@ void GearsStop() {
 void SlapL() {
   if (!SLAPR && !SLAPL) {
     SLAPL = true;
-    LeftSlapMotor.setVelocity(65,percent);
+    //LeftSlapMotor.setVelocity(65,percent);
     LeftSlapMotor.setMaxTorque(50, percent);
     LeftSlapMotor.spinToPosition(LeftSlapMotor.position(deg)+300, deg, true);
     LeftSlapMotor.setPosition(LeftSlapMotor.position(deg)-300, deg);
@@ -129,7 +129,7 @@ void SlapL() {
 void SlapR() {
   if (!SLAPL && !SLAPR) {
     SLAPR = true;
-    RightSlapMotor.setVelocity(65, percent);
+    //RightSlapMotor.setVelocity(65, percent);
     RightSlapMotor.spinToPosition(RightSlapMotor.position(deg)+300, deg, true);
     RightSlapMotor.setPosition(RightSlapMotor.position(deg)-300, deg);
     RightSlapMotor.stop(coast);
@@ -270,22 +270,27 @@ void TurnLeft() {
 }
 
 void autonomous() {
+  Brain.Screen.setCursor(1,1);
+  Brain.Screen.print("Autonomous");
   FrontUp.setVelocity(75, pct);
   BackUp.setVelocity(75, pct);
 
-  /*
-  RightMotor.spinFor(-0.25, rev, false);
-  LeftMotor.spinFor(0.25, rev, true);
-  */
-  LeftMotor.spinFor(0.15, rev, true);
-
+  RightSlapMotor.setVelocity(62.873921, pct);
+  LeftSlapMotor.setVelocity(62.863921, pct);
   SlapR();
+  wait(0.5, sec);
+
+  // inital move forward
 
   RightMotor.spinFor(0.4, rev, false);
   LeftMotor.spinFor(0.4, rev, true);
 
-  RightMotor.spinFor(-0.85, rev, false);
-  LeftMotor.spinFor(0.85, rev, true);
+  //turn to intake
+
+  RightMotor.spinFor(-1.05, rev, false);
+  LeftMotor.spinFor(1.05, rev, true);
+
+  //intake ball
 
   RightIntake.setVelocity(75, pct);
   LeftIntake.setVelocity(75, pct);
@@ -294,6 +299,8 @@ void autonomous() {
 
   FrontUp.spinFor(1.5, rev, false);
   BackUp.spinFor(1.5, rev, false);
+
+  // move forward
   
   RightMotor.spinFor(1.95, rev, false);
   LeftMotor.spinFor(1.95, rev);
@@ -304,26 +311,28 @@ void autonomous() {
   RightMotor.stop(brake);
   LeftMotor.stop(brake);
 
-  RightMotor.spinFor(-3.05, rev, false);
-  LeftMotor.spinFor(-3.05, rev);
+  // move backwards
+  //RightMotor.setVelocity(57, pct);
+  //LeftMotor.setVelocity(50, pct);
+  RightMotor.spinFor(-0.35, rev, true);
 
-  RightMotor.spinFor(1.25, rev, false);
-  LeftMotor.spinFor(-1.25, rev);
-
-  RightMotor.spinFor(-0.75, rev, false);
-  LeftMotor.spinFor(-0.75, rev, true);
+  RightMotor.spinFor(-4.75, rev, false);
+  LeftMotor.spinFor(-4.75, rev);
+  RightMotor.setVelocity(50, pct);
   
   FrontUp.spin(forward);
   BackUp.spin(forward);
   RightIntake.spin(forward);
   LeftIntake.spin(forward);
   wait(1, sec);
-  SlapL();
+  SlapR();
   wait(0.75, sec);
   FrontUp.stop(coast);
   BackUp.stop(coast);
   RightIntake.stop(coast);
   LeftIntake.stop(coast);
+  FrontUp.stop(coast);
+  BackUp.stop(coast);
 }
 
 void Reset() {
@@ -338,6 +347,8 @@ void Reset() {
 }
 
 void drivercontrol() {
+  Brain.Screen.setCursor(1, 1);
+  Brain.Screen.print("Driver Control");
   Controller1.ButtonL1.pressed(IntakeIn);
   Controller1.ButtonL2.pressed(IntakeOut);
   Controller1.ButtonR1.pressed(GearsUp);
@@ -349,13 +360,13 @@ void drivercontrol() {
   Controller1.ButtonX.pressed(Reset);
   Controller1.ButtonRight.pressed(LeftSlapRight);
   Controller1.ButtonLeft.pressed(LeftSlapLeft);
-  Controller1.ButtonUp.pressed(SlowInUp);
-  Controller1.ButtonDown.pressed(SlowInDown);
+  Controller1.ButtonUp.pressed(RightSlapRight);
+  Controller1.ButtonDown.pressed(RightSlapLeft);
 
-  Controller1.ButtonUp.released(SlowInStop);
-  Controller1.ButtonDown.released(SlowInStop);
   Controller1.ButtonRight.released(LeftSlapStop);
   Controller1.ButtonLeft.released(LeftSlapStop);
+  Controller1.ButtonUp.released(RightSlapStop);
+  Controller1.ButtonDown.released(RightSlapStop);
   Controller1.ButtonL1.released(IntakeStop);
   Controller1.ButtonL2.released(IntakeStop);
   Controller1.ButtonR1.released(GearsStop);
@@ -421,8 +432,10 @@ int main() {
     }
     */
   }
-  Controller1.rumble("--..--");
+  Controller1.rumble("--..");
   Brain.Screen.newLine();
   Brain.Screen.print("MAIN LOOP ENDED");
-  Controller1.Screen.print("MAIN LOOP ENDED");
+  Controller1.Screen.clearScreen();
+  Controller1.Screen.setCursor(1, 1);
+  Controller1.Screen.print("Main Loop Ended");
 }
